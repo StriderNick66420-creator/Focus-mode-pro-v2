@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Blocked — Focus Mode Pro</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      background:#0a0a0a;color:#fff;
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      overflow:hidden;
+    }
+
+    /* animated background */
+    .bg{
+      position:fixed;inset:0;pointer-events:none;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 0%,rgba(29,158,117,.12) 0%,transparent 70%),
+        radial-gradient(ellipse 40% 40% at 80% 80%,rgba(29,158,117,.06) 0%,transparent 60%);
+    }
+
+    .grid{
+      position:fixed;inset:0;pointer-events:none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);
+      background-size:48px 48px;
+    }
+
+    .card{
+      position:relative;z-index:1;
+      text-align:center;
+      padding:52px 48px;
+      max-width:480px;
+      width:90%;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:24px;
+      backdrop-filter:blur(20px);
+      animation:fadeUp .5s ease both;
+    }
+
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(20px)}
+      to{opacity:1;transform:none}
+    }
+
+    .icon{
+      font-size:52px;margin-bottom:20px;
+      animation:pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(1.05)}
+    }
+
+    h1{
+      font-size:28px;font-weight:700;
+      letter-spacing:-.5px;margin-bottom:10px;
+    }
+
+    .blocked-url{
+      font-size:13px;color:#555;margin-bottom:6px;
+      word-break:break-all;
+    }
+
+    .tagline{
+      font-size:15px;color:#666;
+      line-height:1.6;margin-bottom:32px;
+    }
+
+    .quote{
+      font-size:14px;color:#888;
+      font-style:italic;
+      line-height:1.7;
+      padding:16px 20px;
+      background:rgba(29,158,117,.08);
+      border:1px solid rgba(29,158,117,.15);
+      border-radius:12px;
+      margin-bottom:28px;
+    }
+
+    .goal-box{
+      display:none;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+      padding:14px 18px;
+      margin-bottom:24px;
+      font-size:13px;color:#aaa;
+      line-height:1.6;
+    }
+    .goal-box.on{display:block}
+    .goal-box strong{color:#fff;font-weight:500}
+
+    .timer-remaining{
+      display:none;
+      font-size:13px;color:#555;
+      margin-bottom:20px;
+    }
+    .timer-remaining.on{display:block}
+    .timer-remaining span{color:#1D9E75;font-weight:600}
+
+    .actions{display:flex;flex-direction:column;gap:10px}
+
+    .btn{
+      display:block;width:100%;padding:12px;
+      border:none;border-radius:10px;
+      font-size:14px;font-weight:500;cursor:pointer;
+      transition:opacity .15s,background .15s;text-decoration:none;
+      text-align:center;
+    }
+    .btn:hover{opacity:.85}
+    .btn-back{background:#1D9E75;color:#fff}
+    .btn-ghost{background:transparent;color:#555;border:1px solid #1e1e1e}
+    .btn-ghost:hover{color:#888;background:#111}
+
+    .hard-notice{
+      display:none;
+      font-size:12px;color:#7c3aed;
+      background:#7c3aed15;border:1px solid #7c3aed33;
+      border-radius:8px;padding:8px 12px;margin-top:10px;
+    }
+    .hard-notice.on{display:block}
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="grid"></div>
+
+  <div class="card">
+    <div class="icon">🎯</div>
+    <h1>Stay focused.</h1>
+    <div class="blocked-url" id="blocked-url"></div>
+    <p class="tagline">This site is blocked while Focus Mode is active.</p>
+
+    <div class="quote" id="quote"></div>
+
+    <div class="goal-box" id="goal-box">
+      <strong>Your focus goal:</strong><br/>
+      <span id="goal-text"></span>
+    </div>
+
+    <div class="timer-remaining" id="timer-remaining">
+      Time remaining in session: <span id="timer-val">—</span>
+    </div>
+
+    <div class="actions">
+      <a href="javascript:history.back()" class="btn btn-back">← Go back</a>
+      <button class="btn btn-ghost" id="unblock-btn">Disable blocking for now</button>
+      <div class="hard-notice" id="hard-notice">
+        🔒 Hard mode is active — blocking cannot be disabled until your session ends.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const QUOTES = [
+      "The successful warrior is the average man, with laser-like focus. — Bruce Lee",
+      "Concentrate all your thoughts upon the work at hand. — Nikola Tesla",
+      "It's not that I'm so smart, I just stay with problems longer. — Einstein",
+      "You don't need more time. You need to decide. — Seth Godin",
+      "Deep work is the superpower of the 21st century. — Cal Newport",
+      "Focus is a matter of deciding what things you're not going to do. — John Carmack",
+      "The ability to focus is the key to success. — Bill Gates",
+      "Where focus goes, energy flows. — Tony Robbins",
+    ];
+
+    // Show blocked URL
+    const params = new URLSearchParams(location.search);
+    const url = params.get('url') || '';
+    try {
+      const h = new URL(url).hostname;
+      document.getElementById('blocked-url').textContent = h;
+    } catch {}
+
+    // Random quote
+    const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    document.getElementById('quote').textContent = `"${q.split(' — ')[0]}" — ${q.split(' — ')[1]}`;
+
+    // Load state
+    chrome.storage.sync.get({
+      timerState: 'idle',
+      timerRemaining: 0,
+      hardMode: false,
+      isPro: false,
+      focusGoal: '',
+    }, s => {
+      // Timer remaining
+      if ((s.timerState === 'running' || s.timerState === 'break') && s.timerRemaining > 0) {
+        const mins = Math.ceil(s.timerRemaining / 60);
+        document.getElementById('timer-val').textContent = `${mins} min`;
+        document.getElementById('timer-remaining').classList.add('on');
+      }
+
+      // Focus goal
+      if (s.focusGoal) {
+        document.getElementById('goal-text').textContent = s.focusGoal;
+        document.getElementById('goal-box').classList.add('on');
+      }
+
+      // Hard mode
+      if (s.isPro && s.hardMode && s.timerState === 'running') {
+        document.getElementById('hard-notice').classList.add('on');
+        document.getElementById('unblock-btn').style.display = 'none';
+      }
+    });
+
+    // Unblock button
+    document.getElementById('unblock-btn').addEventListener('click', () => {
+      chrome.runtime.sendMessage({ type: 'TOGGLE_BLOCK' }, res => {
+        if (!res.ok && res.reason === 'hard_mode') {
+          document.getElementById('hard-notice').classList.add('on');
+          return;
+        }
+        if (url) location.href = url;
+        else history.back();
+      });
+    });
+  </script>
+</body>
+</html>

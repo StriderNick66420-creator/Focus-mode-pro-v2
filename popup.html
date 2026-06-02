@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Focus Mode Pro</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      width:300px;
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      font-size:13px;
+      background:#0f0f0f;
+      color:#fff;
+    }
+
+    /* Header */
+    .header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 16px 12px;
+      border-bottom:1px solid #1e1e1e;
+    }
+    .header-left{display:flex;align-items:center;gap:8px}
+    .app-icon{
+      width:22px;height:22px;background:#1D9E75;border-radius:6px;
+      display:flex;align-items:center;justify-content:center;font-size:12px;
+    }
+    .app-name{font-size:14px;font-weight:600;color:#fff}
+    .pro-badge{
+      display:none;font-size:10px;font-weight:600;
+      background:#1D9E75;color:#fff;
+      padding:2px 7px;border-radius:10px;letter-spacing:.3px;
+    }
+    .pro-badge.on{display:inline-block}
+
+    /* Block toggle row */
+    .block-row{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px 16px;
+      background:#161616;
+      border-bottom:1px solid #1e1e1e;
+    }
+    .block-label{font-size:12px;color:#888}
+    .block-label span{color:#fff;font-weight:500}
+    .toggle{position:relative;width:36px;height:20px}
+    .toggle input{opacity:0;width:0;height:0}
+    .tslider{
+      position:absolute;inset:0;background:#333;
+      border-radius:20px;cursor:pointer;transition:background .2s;
+    }
+    .tslider:before{
+      content:'';position:absolute;
+      width:14px;height:14px;left:3px;top:3px;
+      background:#fff;border-radius:50%;transition:transform .2s;
+    }
+    input:checked+.tslider{background:#1D9E75}
+    input:checked+.tslider:before{transform:translateX(16px)}
+
+    /* Timer ring */
+    .timer-wrap{
+      display:flex;flex-direction:column;align-items:center;
+      padding:28px 16px 20px;
+      position:relative;
+    }
+    .ring-wrap{position:relative;width:160px;height:160px;margin-bottom:16px}
+    .ring-svg{transform:rotate(-90deg)}
+    .ring-bg{fill:none;stroke:#1e1e1e;stroke-width:8}
+    .ring-progress{
+      fill:none;stroke:#1D9E75;stroke-width:8;
+      stroke-linecap:round;
+      stroke-dasharray:440;
+      stroke-dashoffset:0;
+      transition:stroke-dashoffset .8s ease, stroke .3s;
+    }
+    .ring-progress.break{stroke:#3B82F6}
+    .ring-progress.paused{stroke:#888}
+    .ring-center{
+      position:absolute;inset:0;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+    }
+    .timer-time{
+      font-size:34px;font-weight:700;letter-spacing:-1px;
+      font-variant-numeric:tabular-nums;line-height:1;
+    }
+    .timer-label{font-size:11px;color:#666;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+
+    /* Session dots */
+    .session-dots{
+      display:flex;gap:6px;margin-bottom:20px;
+    }
+    .dot{
+      width:8px;height:8px;border-radius:50%;
+      background:#222;border:1.5px solid #333;
+      transition:background .3s,border-color .3s;
+    }
+    .dot.done{background:#1D9E75;border-color:#1D9E75}
+    .dot.active{background:transparent;border-color:#1D9E75}
+
+    /* Controls */
+    .controls{display:flex;gap:8px;width:100%}
+    .btn{
+      flex:1;padding:10px;border:none;border-radius:10px;
+      font-size:13px;font-weight:500;cursor:pointer;
+      transition:opacity .15s,background .15s;
+    }
+    .btn:hover{opacity:.85}
+    .btn-primary{background:#1D9E75;color:#fff}
+    .btn-secondary{background:#1e1e1e;color:#aaa;border:1px solid #2a2a2a}
+    .btn:disabled{opacity:.3;cursor:default}
+
+    /* Stats row */
+    .stats-row{
+      display:grid;grid-template-columns:1fr 1fr 1fr;
+      border-top:1px solid #1e1e1e;
+    }
+    .stat{
+      text-align:center;padding:12px 8px;
+      border-right:1px solid #1e1e1e;
+    }
+    .stat:last-child{border-right:none}
+    .stat-n{font-size:20px;font-weight:700;color:#1D9E75;line-height:1;margin-bottom:3px}
+    .stat-l{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.4px}
+
+    /* Sections */
+    .section{padding:12px 16px;border-top:1px solid #1e1e1e}
+    .sec-label{font-size:10px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+
+    /* Hard mode banner */
+    .hard-banner{
+      display:none;
+      background:#7c3aed22;border:1px solid #7c3aed55;
+      border-radius:8px;padding:8px 12px;
+      font-size:11px;color:#a78bfa;
+      margin-bottom:8px;line-height:1.5;
+    }
+    .hard-banner.on{display:block}
+
+    /* License section */
+    .license-section{padding:12px 16px;border-top:1px solid #1e1e1e}
+    .license-row{display:flex;gap:6px}
+    .license-row input{
+      flex:1;padding:7px 10px;
+      background:#1a1a1a;border:1px solid #2a2a2a;
+      border-radius:7px;font-size:12px;font-family:monospace;
+      color:#fff;outline:none;
+    }
+    .license-row input:focus{border-color:#1D9E75}
+    .license-row .btn{flex:0 0 auto;padding:7px 12px;font-size:12px}
+    .license-msg{font-size:11px;margin-top:5px;min-height:14px}
+    .license-msg.ok{color:#1D9E75}
+    .license-msg.err{color:#f87171}
+
+    /* Footer */
+    .footer{
+      display:flex;justify-content:space-between;
+      padding:8px 16px 10px;border-top:1px solid #1e1e1e;
+    }
+    .footer a{font-size:11px;color:#444;text-decoration:none;cursor:pointer}
+    .footer a:hover{color:#888}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="app-icon">⏱</div>
+    <span class="app-name">Focus Mode</span>
+    <span class="pro-badge" id="pro-badge">PRO</span>
+  </div>
+  <label class="toggle">
+    <input type="checkbox" id="block-toggle"/>
+    <span class="tslider"></span>
+  </label>
+</div>
+
+<div class="block-row">
+  <span class="block-label">Blocking: <span id="block-status">Off</span></span>
+  <span id="block-count" style="font-size:11px;color:#555">0 sites</span>
+</div>
+
+<div class="timer-wrap">
+  <div class="ring-wrap">
+    <svg class="ring-svg" width="160" height="160" viewBox="0 0 160 160">
+      <circle class="ring-bg" cx="80" cy="80" r="70"/>
+      <circle class="ring-progress" id="ring" cx="80" cy="80" r="70"/>
+    </svg>
+    <div class="ring-center">
+      <div class="timer-time" id="timer-display">25:00</div>
+      <div class="timer-label" id="timer-label">Focus</div>
+    </div>
+  </div>
+
+  <div class="session-dots" id="session-dots">
+    <div class="dot active"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+
+  <div id="hard-banner" class="hard-banner">
+    🔒 Hard mode — block cannot be disabled during this session.
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-primary" id="main-btn">Start Focus</button>
+    <button class="btn btn-secondary" id="reset-btn" disabled>Reset</button>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat">
+    <div class="stat-n" id="s-sessions">0</div>
+    <div class="stat-l">Today</div>
+  </div>
+  <div class="stat">
+    <div class="stat-n" id="s-streak">0</div>
+    <div class="stat-l">Streak</div>
+  </div>
+  <div class="stat">
+    <div class="stat-n" id="s-score">0</div>
+    <div class="stat-l">Score</div>
+  </div>
+</div>
+
+<div class="license-section" id="license-section">
+  <div class="sec-label">Unlock Pro — hard mode + stats</div>
+  <div class="license-row">
+    <input type="text" id="license-input" placeholder="FMP-XXXX-XXXX-XXXX" maxlength="19"/>
+    <button class="btn btn-primary" id="activate-btn">Activate</button>
+  </div>
+  <div class="license-msg" id="license-msg"></div>
+  <div style="margin-top:6px">
+    <a href="https://gumroad.com/l/focus-mode-pro" target="_blank"
+       style="font-size:11px;color:#1D9E75;text-decoration:none;">
+      Get Pro — $9 one-time →
+    </a>
+  </div>
+</div>
+
+<div class="footer">
+  <a id="options-link">Manage blocked sites</a>
+  <a href="https://gumroad.com/l/focus-mode-pro" target="_blank">Get Pro</a>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
